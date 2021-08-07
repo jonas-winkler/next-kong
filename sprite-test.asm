@@ -2,6 +2,11 @@
 ; Demo to test/learn how the Sprite system works
 ;----------------------------------------
 
+SPR_SEL         equ $303B
+
+SPR_ATTR        equ $57
+SPR_DATA        equ $5B
+
 L2_PAGE         equ $12
 SPR_CTRL        equ $15
 L2_X            equ $16
@@ -12,6 +17,7 @@ CLIP_CTRL       equ $1C
 PAL_IDX         equ $40
 PAL_CTRL        equ $43
 PAL_EXT         equ $44
+SPR_TRANS       equ $4B
 MMU_6           equ $56
 MMU_7           equ $57
 DISP_CTRL       equ $69
@@ -31,8 +37,7 @@ start:
 ; Setup the Layer 2 Background
     nextreg DISP_CTRL,$80   ; Turn on Layer 2
     nextreg L2_CTRL,$10     ; Set resolution to 320x256
-    nextreg L2_PAGE,9       ; Map screen data to bank 9
-    nextreg L2_X,0          ; Set screen offsets
+    nextreg L2_PAGE,9       ; Map screen data to bank 9 nextreg L2_X,0          ; Set screen offsets
     nextreg L2_X_MSB,0
     nextreg L2_Y,0
     nextreg CLIP_CTRL,$01   ; Set clipping so whole screen is visible
@@ -51,8 +56,57 @@ start:
     nextreg SPR_CLIP,159
     nextreg SPR_CLIP,0
     nextreg SPR_CLIP,255
-    
 
+; Load sprite palette
+    nextreg PAL_CTRL,$20    ; Open sprite palette up for editing
+    
+    ld b,PaletteSize
+    ld hl,SpritePalette
+LoadPalette:
+    ld a,(hl)
+    nextreg PAL_EXT,a
+    inc hl
+    ld a,(hl)
+    nextreg PAL_EXT,a
+    inc hl
+    djnz LoadPalette
+
+; Make 0 the transparency color
+    nextreg SPR_TRANS,0
+    
+    ld bc,SPR_SEL           ; Select sprite index 0
+    ld a,0
+    out (c),a
+
+; Upload Sprite Pattern data
+    ld b,128
+    ld hl,SmileySprite
+    ld c,SPR_DATA
+    otir
+
+    ld b,128
+    ld hl,FishSprite
+    otir
+
+    ld b,128
+    ld hl,TreeSprite
+    otir
+
+    ld b,128
+    ld hl,AxeSprite
+    otir
+
+    ld bc,SPR_SEL           ; Select sprite index 0 again
+    ld a,0
+    out (c),a
+
+; Upload Sprite Attribute data
+    ld b,4*5
+    ld hl,Smiley
+    ld c,SPR_ATTR
+    otir
+
+    jr $
 
 ; Fills screen with whatever palette index is in a register
 FillScreen:
@@ -106,6 +160,34 @@ FillColumn:
     DS $0800-2,$AA
 StackTop:
     DW $AAAA
+
+Smiley:
+    db $00
+    db $00
+    db $00
+    db $C0
+    db $80
+Fish:
+    db $35
+    db $35
+    db $00
+    db $C0
+    db $C0
+Tree:
+    db $7f
+    db $7f
+    db $00
+    db $C1
+    db $80
+Axe:
+    db $B5
+    db $B6
+    db $00
+    db $C1
+    db $C0
+
+; Include sprite and sprite palette data
+    INCLUDE "test-sprites.i.asm"
 
 ; Create nex file
     SAVENEX OPEN "sprite-test.nex",start,StackTop

@@ -74,6 +74,8 @@ AxeSprite:
     dh "B8B0000000000000"
     dh "BB00000000000000"
 
+PaletteSize         equ (SpritePaletteTop-SpritePalette)/2
+
 SpritePalette:
     db $00,$00      ; Transparent
     db $05,$00      ; Dark Blue
@@ -87,3 +89,4 @@ SpritePalette:
     db $E1,$01      ; Red
     db $FC,$00      ; Yellow
     db $00,$00      ; Black
+SpritePaletteTop:
